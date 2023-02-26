@@ -1,7 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"github.com/gin-gonic/gin"
+)
+
+var balance = 1000
 
 func main() {
-	fmt.Println("hello")
+	router := gin.Default()
+	router.GET("/balance/", getBalance)
+
+	router.Run(":80")
+}
+
+func getBalance(context *gin.Context) {
+
 }
