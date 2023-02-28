@@ -1,18 +1,19 @@
 package main
 
 import (
+	"go-blog/app/controller/authcontroller"
+	"go-blog/app/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
-var balance = 1000
-
 func main() {
 	router := gin.Default()
-	router.GET("/balance/", getBalance)
-
-	router.Run(":80")
-}
-
-func getBalance(context *gin.Context) {
-
+	router.POST("/register", authcontroller.Register)
+	router.POST("/login", authcontroller.Login)
+	router.Use(middleware.Auth)
+	{
+		router.POST("/logout", authcontroller.Logout)
+	}
+	router.Run(":8080")
 }
