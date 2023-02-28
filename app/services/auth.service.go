@@ -7,5 +7,5 @@ import (
 
 type AuthService interface {
 	Regitster(validation.RegitsterForm) (*models.DBResponse, error)
-	SignInUser(*models.SignInInput) (*models.DBResponse, error)
+	Login(validation.LoginForm) (*models.DBResponse, error)
 }

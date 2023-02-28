@@ -24,7 +24,7 @@ type LoginForm struct {
 	Password string `json:"password" bson:"password" binding:"required"`
 }
 
-func (form *RegitsterForm) Regitster(ctx *gin.Context) {
+func (form *RegitsterForm) Validation(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&form)
 	if err != nil {
 		fmt.Println("err", err)
@@ -35,6 +35,13 @@ func (form *RegitsterForm) Regitster(ctx *gin.Context) {
 
 	if form.Password != form.PasswordConfirm {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Passwords do not match"})
+		return
+	}
+}
+
+func (form *LoginForm) Validation(ctx *gin.Context) {
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}
 }

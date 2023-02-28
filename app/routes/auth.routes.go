@@ -20,7 +20,7 @@ func (ar *AuthRoute) AuthRoute(rg *gin.RouterGroup, userService services.UserSer
 	router := rg.Group("/auth")
 
 	router.POST("/register", ar.authController.Regitster)
-	router.POST("/login", ar.authController.SignInUser)
+	router.POST("/login", ar.authController.Login)
 	router.GET("/refresh", ar.authController.RefreshAccessToken)
-	router.GET("/logout", middleware.DeserializeUser(userService), ar.authController.LogoutUser)
+	router.GET("/logout", middleware.DeserializeUser(userService), ar.authController.Logout)
 }

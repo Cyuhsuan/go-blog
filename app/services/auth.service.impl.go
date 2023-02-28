@@ -67,6 +67,6 @@ func (uc *AuthServiceImpl) Regitster(user validation.RegitsterForm) (*models.DBR
 	return newUser, nil
 }
 
-func (uc *AuthServiceImpl) SignInUser(*models.SignInInput) (*models.DBResponse, error) {
+func (uc *AuthServiceImpl) Login(validation.LoginForm) (*models.DBResponse, error) {
 	return nil, nil
 }

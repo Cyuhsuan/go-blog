@@ -6,11 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type SignInInput struct {
-	Email    string `json:"email" bson:"email" binding:"required"`
-	Password string `json:"password" bson:"password" binding:"required"`
-}
-
 type DBResponse struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id"`
 	Name            string             `json:"name" bson:"name"`
