@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserRouteController struct {
+type UserRoute struct {
 	userController controllers.UserController
 }
 
-func NewRouteUserController(userController controllers.UserController) UserRouteController {
-	return UserRouteController{userController}
+func NewUserRoute(userController controllers.UserController) UserRoute {
+	return UserRoute{userController}
 }
 
-func (uc *UserRouteController) UserRoute(rg *gin.RouterGroup, userService services.UserService) {
+func (uc *UserRoute) UserRoute(rg *gin.RouterGroup, userService services.UserService) {
 
 	router := rg.Group("users")
 	router.Use(middleware.DeserializeUser(userService))

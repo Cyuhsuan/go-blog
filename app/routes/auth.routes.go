@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthRouteController struct {
+type AuthRoute struct {
 	authController controllers.AuthController
 }
 
-func NewAuthRouteController(authController controllers.AuthController) AuthRouteController {
-	return AuthRouteController{authController}
+func NewAuthRoute(authController controllers.AuthController) AuthRoute {
+	return AuthRoute{authController}
 }
 
-func (rc *AuthRouteController) AuthRoute(rg *gin.RouterGroup, userService services.UserService) {
+func (rc *AuthRoute) AuthRoute(rg *gin.RouterGroup, userService services.UserService) {
 	router := rg.Group("/auth")
 
 	router.POST("/register", rc.authController.SignUpUser)

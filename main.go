@@ -8,7 +8,6 @@ import (
 	"go-blog/app/services"
 	"go-blog/config"
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,19 +16,18 @@ import (
 )
 
 var (
-	server      *gin.Engine
-	ctx         context.Context
-	mongoclient *mongo.Client
-	// redisclient *redis.Client
+	server *gin.Engine
+	ctx    context.Context
+	dbConn *mongo.Client
 
-	userService         services.UserService
-	UserController      controllers.UserController
-	UserRouteController routes.UserRouteController
+	userService    services.UserService
+	UserController controllers.UserController
+	UserRoute      routes.UserRoute
 
-	authCollection      *mongo.Collection
-	authService         services.AuthService
-	AuthController      controllers.AuthController
-	AuthRouteController routes.AuthRouteController
+	userCollection *mongo.Collection
+	authService    services.AuthService
+	AuthController controllers.AuthController
+	AuthRoute      routes.AuthRoute
 )
 
 func init() {
@@ -37,48 +35,31 @@ func init() {
 	if err != nil {
 		log.Fatal("Could not load environment variables", err)
 	}
-
 	ctx = context.TODO()
 
 	// Connect to MongoDB
-	mongoconn := options.Client().ApplyURI(config.DBUri)
-	mongoclient, err := mongo.Connect(ctx, mongoconn)
+	dbConfig := options.Client().ApplyURI(config.DBUri)
+	dbConn, err := mongo.Connect(ctx, dbConfig)
 
 	if err != nil {
 		panic(err)
 	}
 
-	if err := mongoclient.Ping(ctx, readpref.Primary()); err != nil {
+	if err := dbConn.Ping(ctx, readpref.Primary()); err != nil {
 		panic(err)
 	}
 
 	fmt.Println("MongoDB successfully connected...")
 
-	// Connect to Redis
-	// redisclient = redis.NewClient(&redis.Options{
-	// 	Addr: config.RedisUri,
-	// })
-
-	// if _, err := redisclient.Ping(ctx).Result(); err != nil {
-	// 	panic(err)
-	// }
-
-	// err = redisclient.Set(ctx, "test", "Welcome to Golang with Redis and MongoDB", 0).Err()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	fmt.Println("Redis client connected successfully...")
-
 	// Collections
-	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
-	userService = services.NewUserServiceImpl(authCollection, ctx)
-	authService = services.NewAuthService(authCollection, ctx)
+	userCollection = dbConn.Database("go-blog").Collection("users")
+	userService = services.NewUserServiceImpl(userCollection, ctx)
+	authService = services.NewAuthService(userCollection, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
-	AuthRouteController = routes.NewAuthRouteController(AuthController)
+	AuthRoute = routes.NewAuthRoute(AuthController)
 
 	UserController = controllers.NewUserController(userService)
-	UserRouteController = routes.NewRouteUserController(UserController)
+	UserRoute = routes.NewUserRoute(UserController)
 
 	server = gin.Default()
 }
@@ -90,29 +71,11 @@ func main() {
 		log.Fatal("Could not load config", err)
 	}
 
-	defer mongoclient.Disconnect(ctx)
-
-	// value, err := redisclient.Get(ctx, "test").Result()
-
-	// if err == redis.Nil {
-	// 	fmt.Println("key: test does not exist")
-	// } else if err != nil {
-	// 	panic(err)
-	// }
-
-	// corsConfig := cors.DefaultConfig()
-	// corsConfig.AllowOrigins = []string{"http://localhost:8000", "http://localhost:3000"}
-	// corsConfig.AllowCredentials = true
-
-	// server.Use(cors.New(corsConfig))
+	defer dbConn.Disconnect(ctx)
 
 	router := server.Group("/api")
-	router.GET("/healthchecker", func(ctx *gin.Context) {
-		// ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": value})
-		ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": ""})
-	})
 
-	AuthRouteController.AuthRoute(router, userService)
-	UserRouteController.UserRoute(router, userService)
+	AuthRoute.AuthRoute(router, userService)
+	UserRoute.UserRoute(router, userService)
 	log.Fatal(server.Run(":" + config.Port))
 }
