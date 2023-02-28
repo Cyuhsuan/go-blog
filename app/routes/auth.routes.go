@@ -16,7 +16,7 @@ func NewAuthRoute(authController controllers.AuthController) AuthRoute {
 	return AuthRoute{authController}
 }
 
-func (ar *AuthRoute) AuthRoute(rg *gin.RouterGroup, userService services.UserService) {
+func (ar *AuthRoute) Route(rg *gin.RouterGroup, userService services.UserService) {
 	router := rg.Group("/auth")
 
 	router.POST("/register", ar.authController.Regitster)

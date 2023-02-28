@@ -53,12 +53,13 @@ func init() {
 
 	// Collections
 	userCollection = dbConn.Database("go-blog").Collection("users")
+	// 建立 service controller
 	userService = services.NewUserServiceImpl(userCollection, ctx)
 	authService = services.NewAuthService(userCollection, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
-	AuthRoute = routes.NewAuthRoute(AuthController)
-
 	UserController = controllers.NewUserController(userService)
+	// 建立路由, 注入 contoller
+	AuthRoute = routes.NewAuthRoute(AuthController)
 	UserRoute = routes.NewUserRoute(UserController)
 
 	server = gin.Default()
@@ -75,7 +76,7 @@ func main() {
 
 	router := server.Group("/api")
 
-	AuthRoute.AuthRoute(router, userService)
-	UserRoute.UserRoute(router, userService)
+	AuthRoute.Route(router, userService)
+	UserRoute.Route(router, userService)
 	log.Fatal(server.Run(":" + config.Port))
 }
