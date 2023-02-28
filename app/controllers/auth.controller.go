@@ -5,6 +5,7 @@ import (
 	"go-blog/app/models"
 	"go-blog/app/services"
 	"go-blog/app/utils"
+	"go-blog/app/validation"
 	"go-blog/config"
 	"net/http"
 	"strings"
@@ -22,20 +23,12 @@ func NewAuthController(authService services.AuthService, userService services.Us
 	return AuthController{authService, userService}
 }
 
-func (ac *AuthController) SignUpUser(ctx *gin.Context) {
-	var user *models.SignUpInput
-
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-		return
-	}
-
-	if user.Password != user.PasswordConfirm {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Passwords do not match"})
-		return
-	}
-
-	newUser, err := ac.authService.SignUpUser(user)
+func (ac *AuthController) Regitster(ctx *gin.Context) {
+	var form validation.RegitsterForm
+	// 表單驗證
+	form.Regitster(ctx)
+	// 執行註冊
+	newUser, err := ac.authService.Regitster(form)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "email already exist") {

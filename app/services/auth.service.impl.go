@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"go-blog/app/utils"
+	"go-blog/app/validation"
 	"strings"
 	"time"
 
@@ -27,7 +28,7 @@ func NewAuthService(collection *mongo.Collection, ctx context.Context) AuthServi
 	return &AuthServiceImpl{collection, ctx}
 }
 
-func (uc *AuthServiceImpl) SignUpUser(user *models.SignUpInput) (*models.DBResponse, error) {
+func (uc *AuthServiceImpl) Regitster(user validation.RegitsterForm) (*models.DBResponse, error) {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = user.CreatedAt
 	user.Email = strings.ToLower(user.Email)

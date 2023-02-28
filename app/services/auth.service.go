@@ -1,8 +1,11 @@
 package services
 
-import "go-blog/app/models"
+import (
+	"go-blog/app/models"
+	"go-blog/app/validation"
+)
 
 type AuthService interface {
-	SignUpUser(*models.SignUpInput) (*models.DBResponse, error)
+	Regitster(validation.RegitsterForm) (*models.DBResponse, error)
 	SignInUser(*models.SignInInput) (*models.DBResponse, error)
 }
