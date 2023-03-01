@@ -24,8 +24,8 @@ type AuthServiceImpl struct {
 	ctx        context.Context
 }
 
-func NewAuthService(collection *mongo.Collection, ctx context.Context) AuthService {
-	return &AuthServiceImpl{collection, ctx}
+func NewAuthService(db *mongo.Database, ctx context.Context) AuthService {
+	return &AuthServiceImpl{db.Collection("users"), ctx}
 }
 
 func (uc *AuthServiceImpl) Regitster(user validation.RegitsterForm) (*models.DBResponse, error) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-blog/app/controllers"
-	"go-blog/app/routes"
+	"go-blog/app/middleware"
 	"go-blog/app/services"
 	"go-blog/config"
 	"log"
@@ -19,15 +19,12 @@ var (
 	server *gin.Engine
 	ctx    context.Context
 	dbConn *mongo.Client
+	db     *mongo.Database
 
 	userService    services.UserService
-	UserController controllers.UserController
-	UserRoute      routes.UserRoute
-
-	userCollection *mongo.Collection
 	authService    services.AuthService
+	UserController controllers.UserController
 	AuthController controllers.AuthController
-	AuthRoute      routes.AuthRoute
 )
 
 func init() {
@@ -51,16 +48,13 @@ func init() {
 
 	fmt.Println("MongoDB successfully connected...")
 
-	// Collections
-	userCollection = dbConn.Database("go-blog").Collection("users")
+	// db
+	db := dbConn.Database("go-blog")
 	// 建立 service controller
-	userService = services.NewUserServiceImpl(userCollection, ctx)
-	authService = services.NewAuthService(userCollection, ctx)
+	userService = services.NewUserService(db, ctx)
+	authService = services.NewAuthService(db, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
-	// 建立路由, 注入 contoller
-	AuthRoute = routes.NewAuthRoute(AuthController)
-	UserRoute = routes.NewUserRoute(UserController)
 
 	server = gin.Default()
 }
@@ -75,8 +69,23 @@ func main() {
 	defer dbConn.Disconnect(ctx)
 
 	router := server.Group("/api")
+	{
+		auth := router.Group("/auth")
+		{
+			auth.POST("/register", AuthController.Regitster)
+			auth.POST("/login", AuthController.Login)
+			auth.GET("/refresh", AuthController.RefreshAccessToken)
+		}
+		// 登入權限 middleware
+		router.Use(middleware.DeserializeUser(userService))
+		{
+			auth.GET("/logout", AuthController.Logout)
+			user := router.Group("users")
+			{
+				user.GET("/me", UserController.GetMe)
+			}
 
-	AuthRoute.Route(router, userService)
-	UserRoute.Route(router, userService)
+		}
+	}
 	log.Fatal(server.Run(":" + config.Port))
 }
