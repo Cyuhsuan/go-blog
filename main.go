@@ -77,7 +77,7 @@ func main() {
 			auth.GET("/refresh", AuthController.RefreshAccessToken)
 		}
 		// 登入權限 middleware
-		router.Use(middleware.DeserializeUser(userService))
+		router.Use(middleware.AuthMiddleware(userService))
 		{
 			auth.GET("/logout", AuthController.Logout)
 			user := router.Group("users")
