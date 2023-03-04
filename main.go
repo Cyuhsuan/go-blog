@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-blog/app/controllers"
 	"go-blog/app/middleware"
+	"go-blog/app/models"
 	"go-blog/app/services"
 	"go-blog/config"
 	"log"
@@ -23,8 +24,10 @@ var (
 
 	userService    services.UserService
 	authService    services.AuthService
+	postService    services.PostService
 	UserController controllers.UserController
 	AuthController controllers.AuthController
+	PostController controllers.PostController
 )
 
 func init() {
@@ -52,9 +55,11 @@ func init() {
 	db := dbConn.Database("go-blog")
 	// 建立 service controller
 	userService = services.NewUserService(db, ctx)
+	postService = services.NewPostService(db, ctx, models.Post{})
 	authService = services.NewAuthService(db, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
+	PostController = controllers.NewPostController(postService)
 
 	server = gin.Default()
 }
@@ -77,12 +82,20 @@ func main() {
 			auth.GET("/refresh", AuthController.RefreshAccessToken)
 		}
 		// 登入權限 middleware
-		router.Use(middleware.AuthMiddleware(userService))
+		router.Use(middleware.Auth(userService))
 		{
 			auth.GET("/logout", AuthController.Logout)
 			user := router.Group("users")
 			{
 				user.GET("/me", UserController.GetMe)
+			}
+			post := router.Group("post")
+			{
+				post.GET("/", PostController.List)
+				post.GET("/:id", PostController.Show)
+				post.POST("/", PostController.Store)
+				post.PUT("/:id", PostController.Update)
+				post.DELETE("/:id", PostController.Delete)
 			}
 
 		}
