@@ -10,5 +10,5 @@ type PostService interface {
 	Show(id string) (models.Post, error)
 	Store(data validation.PostCreateForm) error
 	Update(data validation.PostCreateForm, id string) error
-	Delete() error
+	Delete(id string) error
 }

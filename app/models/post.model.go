@@ -87,6 +87,12 @@ func (m *PostModel) UpdateById(data validation.PostCreateForm, id string) error 
 	}
 	return nil
 }
-func (m *PostModel) DeleteById() error {
+func (m *PostModel) DeleteById(id string) error {
+	oid, _ := primitive.ObjectIDFromHex(id)
+
+	_, err := m.collection.DeleteOne(m.ctx, bson.D{{"_id", oid}})
+	if err != nil {
+		return err
+	}
 	return nil
 }

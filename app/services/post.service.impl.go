@@ -45,6 +45,10 @@ func (ps *PostServiceImpl) Update(data validation.PostCreateForm, id string) err
 	}
 	return nil
 }
-func (ps *PostServiceImpl) Delete() error {
+func (ps *PostServiceImpl) Delete(id string) error {
+	err := ps.model.DeleteById(id)
+	if err != nil {
+		return err
+	}
 	return nil
 }

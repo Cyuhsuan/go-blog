@@ -59,6 +59,10 @@ func (pc *PostController) Update(ctx *gin.Context) {
 
 // 刪除指定文章
 func (pc *PostController) Delete(ctx *gin.Context) {
-	res, _ := pc.service.Index()
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
+	id := ctx.Param("id")
+	err := pc.service.Delete(id)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"status": "fail", "data": ""})
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": ""})
 }
