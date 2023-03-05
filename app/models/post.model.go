@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"go-blog/app/validation"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,8 +22,12 @@ type PostModel struct {
 	collection *mongo.Collection
 }
 
-func (p *Post) FindAll(collection *mongo.Collection) ([]Post, error) {
-	cursor, err := collection.Find(context.TODO(), bson.D{})
+func NewPostModel(collection *mongo.Collection) PostModel {
+	return PostModel{collection}
+}
+
+func (m *PostModel) FindAll() ([]Post, error) {
+	cursor, err := m.collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return []Post{}, errors.New("query error")
 	}
@@ -39,14 +44,14 @@ func (p *Post) FindAll(collection *mongo.Collection) ([]Post, error) {
 	}
 	return results, nil
 }
-func (p *Post) FindById(collection *mongo.Collection, id string) (Post, error) {
+func (m *PostModel) FindById(id string) (Post, error) {
 	oid, _ := primitive.ObjectIDFromHex(id)
 
 	var post Post
 
 	query := bson.M{"_id": oid}
 	var ctx context.Context
-	err := collection.FindOne(ctx, query).Decode(&post)
+	err := m.collection.FindOne(ctx, query).Decode(&post)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -57,9 +62,9 @@ func (p *Post) FindById(collection *mongo.Collection, id string) (Post, error) {
 
 	return post, nil
 }
-func (p *Post) Create(collection *mongo.Collection) error {
+func (m *PostModel) Create(data validation.PostCreateForm) error {
 	var ctx context.Context
-	_, err := collection.InsertOne(ctx, &p)
+	_, err := m.collection.InsertOne(ctx, data)
 
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
@@ -69,26 +74,10 @@ func (p *Post) Create(collection *mongo.Collection) error {
 	}
 	return nil
 }
-func (p *Post) UpdateById() error {
+func (m *PostModel) UpdateById() error {
 
 	return nil
 }
-func (p *Post) DeleteById() error {
+func (m *PostModel) DeleteById() error {
 	return nil
 }
-
-// func (p *Post) Index() {
-
-// }
-// func (p *Post) Show(id primitive.ObjectID) {
-
-// }
-// func (p *Post) Store() {
-
-// }
-// func (p *Post) Update() {
-
-// }
-// func (p *Post) Delete(id primitive.ObjectID) {
-
-// }

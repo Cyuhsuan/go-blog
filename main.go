@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-blog/app/controllers"
 	"go-blog/app/middleware"
-	"go-blog/app/models"
 	"go-blog/app/services"
 	"go-blog/config"
 	"log"
@@ -55,7 +54,7 @@ func init() {
 	db := dbConn.Database("go-blog")
 	// 建立 service controller
 	userService = services.NewUserService(db, ctx)
-	postService = services.NewPostService(db, ctx, models.Post{})
+	postService = services.NewPostService(ctx, db.Collection("post"))
 	authService = services.NewAuthService(db, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
