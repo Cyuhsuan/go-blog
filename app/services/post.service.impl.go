@@ -9,7 +9,7 @@ import (
 )
 
 type PostServiceImpl struct {
-	model models.PostModel
+	model *models.PostModel
 }
 
 func NewPostService(ctx context.Context, collection *mongo.Collection) PostService {
@@ -38,7 +38,11 @@ func (ps *PostServiceImpl) Store(data validation.PostCreateForm) error {
 	}
 	return nil
 }
-func (ps *PostServiceImpl) Update() error {
+func (ps *PostServiceImpl) Update(data validation.PostCreateForm, id string) error {
+	err := ps.model.UpdateById(data, id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func (ps *PostServiceImpl) Delete() error {

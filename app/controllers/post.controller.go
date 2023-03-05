@@ -24,7 +24,8 @@ func (pc *PostController) List(ctx *gin.Context) {
 
 // 搜尋指定文章
 func (pc *PostController) Show(ctx *gin.Context) {
-	res, _ := pc.service.Index()
+	id := ctx.Param("id")
+	res, _ := pc.service.Show(id)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
 }
 
@@ -45,8 +46,15 @@ func (pc *PostController) Store(ctx *gin.Context) {
 
 // 更新文章
 func (pc *PostController) Update(ctx *gin.Context) {
-	res, _ := pc.service.Index()
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": res})
+	id := ctx.Param("id")
+	var form validation.PostCreateForm
+	form.Validation(ctx)
+	err := pc.service.Update(form, id)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"status": "fail", "data": ""})
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "data": ""})
+
 }
 
 // 刪除指定文章

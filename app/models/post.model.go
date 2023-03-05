@@ -23,17 +23,17 @@ type PostModel struct {
 	ctx        context.Context
 }
 
-func NewPostModel(collection *mongo.Collection, ctx context.Context) PostModel {
-	return PostModel{collection, ctx}
+func NewPostModel(collection *mongo.Collection, ctx context.Context) *PostModel {
+	return &PostModel{collection, ctx}
 }
 
 func (m *PostModel) FindAll() ([]Post, error) {
-	cursor, err := m.collection.Find(context.TODO(), bson.D{})
+	cursor, err := m.collection.Find(m.ctx, bson.D{})
 	if err != nil {
 		return []Post{}, errors.New("query error")
 	}
 	var results []Post
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(m.ctx) {
 		var elem Post
 		err := cursor.Decode(&elem)
 		if err != nil {
@@ -73,8 +73,18 @@ func (m *PostModel) Create(data validation.PostCreateForm) error {
 	}
 	return nil
 }
-func (m *PostModel) UpdateById() error {
+func (m *PostModel) UpdateById(data validation.PostCreateForm, id string) error {
+	oid, _ := primitive.ObjectIDFromHex(id)
+	filter := bson.D{{"_id", oid}}
+	var updateFields bson.D
+	conv, _ := bson.Marshal(data)
+	bson.Unmarshal(conv, &updateFields)
+	update := bson.D{{"$set", updateFields}}
 
+	_, err := m.collection.UpdateOne(m.ctx, filter, update)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func (m *PostModel) DeleteById() error {
