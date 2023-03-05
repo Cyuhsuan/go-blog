@@ -20,10 +20,11 @@ type Post struct {
 
 type PostModel struct {
 	collection *mongo.Collection
+	ctx        context.Context
 }
 
-func NewPostModel(collection *mongo.Collection) PostModel {
-	return PostModel{collection}
+func NewPostModel(collection *mongo.Collection, ctx context.Context) PostModel {
+	return PostModel{collection, ctx}
 }
 
 func (m *PostModel) FindAll() ([]Post, error) {
@@ -50,8 +51,7 @@ func (m *PostModel) FindById(id string) (Post, error) {
 	var post Post
 
 	query := bson.M{"_id": oid}
-	var ctx context.Context
-	err := m.collection.FindOne(ctx, query).Decode(&post)
+	err := m.collection.FindOne(m.ctx, query).Decode(&post)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -63,8 +63,7 @@ func (m *PostModel) FindById(id string) (Post, error) {
 	return post, nil
 }
 func (m *PostModel) Create(data validation.PostCreateForm) error {
-	var ctx context.Context
-	_, err := m.collection.InsertOne(ctx, data)
+	_, err := m.collection.InsertOne(m.ctx, data)
 
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {

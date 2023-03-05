@@ -54,8 +54,8 @@ func init() {
 	db := dbConn.Database("go-blog")
 	// 建立 service controller
 	userService = services.NewUserService(db, ctx)
-	postService = services.NewPostService(ctx, db.Collection("post"))
 	authService = services.NewAuthService(db, ctx)
+	postService = services.NewPostService(ctx, db.Collection("post"))
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
 	PostController = controllers.NewPostController(postService)

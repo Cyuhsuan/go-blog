@@ -9,13 +9,11 @@ import (
 )
 
 type PostServiceImpl struct {
-	ctx   context.Context
 	model models.PostModel
 }
 
 func NewPostService(ctx context.Context, collection *mongo.Collection) PostService {
-
-	return &PostServiceImpl{ctx, models.NewPostModel(collection)}
+	return &PostServiceImpl{models.NewPostModel(collection, ctx)}
 }
 
 func (ps *PostServiceImpl) Index() ([]models.Post, error) {
