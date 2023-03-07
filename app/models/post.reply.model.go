@@ -12,8 +12,9 @@ import (
 
 // PostReply Entities
 type PostReply struct {
-	Id        primitive.ObjectID `json:"id" bson:"_id"`
+	Id        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	PostId    primitive.ObjectID `json:"post_id" bson:"post_id" binding:"required"`
+	Content   string             `json:"content" bson:"content" binding:"required"`
 	CreatedAt time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt time.Time          `json:"updated_at,omitempty" bson:"updated_at"`
 }
@@ -102,7 +103,49 @@ func (prm *MongodbPostReplyModel) FindAll(id string) ([]*PostReply, error) {
 	}
 	return results, nil
 }
-func (prm *MongodbPostReplyModel) FindById(id string) (*PostReply, error)
-func (prm *MongodbPostReplyModel) Create(data *PostReply) error
-func (prm *MongodbPostReplyModel) UpdateById(data *PostReply, id string) error
-func (prm *MongodbPostReplyModel) DeleteById(id string) error
+
+func (prm *MongodbPostReplyModel) FindById(id string) (*PostReply, error) {
+	ctx := context.TODO()
+	oid, _ := primitive.ObjectIDFromHex(id)
+
+	var reply *PostReply
+	if err := prm.collection.FindOne(ctx, bson.M{"_id": oid}).Decode(&reply); err != nil {
+		return &PostReply{}, err
+	}
+
+	return reply, nil
+}
+
+func (prm *MongodbPostReplyModel) Create(data *PostReply) error {
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = time.Now()
+	ctx := context.TODO()
+	if _, err := prm.collection.InsertOne(ctx, data); err != nil {
+		return err
+	}
+	return nil
+}
+func (prm *MongodbPostReplyModel) UpdateById(data *PostReply, id string) error {
+	ctx := context.TODO()
+	oid, _ := primitive.ObjectIDFromHex(id)
+	filter := bson.D{{"_id", oid}}
+	var updateFields bson.D
+	data.UpdatedAt = time.Now()
+	conv, _ := bson.Marshal(data)
+	bson.Unmarshal(conv, &updateFields)
+	update := bson.D{{"$set", updateFields}}
+	if _, err := prm.collection.UpdateOne(ctx, filter, update); err != nil {
+		return err
+	}
+	return nil
+}
+func (prm *MongodbPostReplyModel) DeleteById(id string) error {
+	ctx := context.TODO()
+	oid, _ := primitive.ObjectIDFromHex(id)
+
+	_, err := prm.collection.DeleteOne(ctx, bson.D{{"_id", oid}})
+	if err != nil {
+		return err
+	}
+	return nil
+}

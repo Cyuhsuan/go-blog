@@ -22,11 +22,12 @@ var (
 	dbConn *mongo.Client
 	db     *mongo.Database
 
-	userService    services.UserService
-	authService    services.AuthService
-	UserController controllers.UserController
-	AuthController controllers.AuthController
-	PostController controllers.PostController
+	userService         services.UserService
+	authService         services.AuthService
+	UserController      controllers.UserController
+	AuthController      controllers.AuthController
+	PostController      controllers.PostController
+	PostReplyController controllers.PostReplyController
 )
 
 func init() {
@@ -63,6 +64,11 @@ func init() {
 	postInteractor := models.NewPostInteractor(postRepository)
 	PostController = controllers.NewPostController(postInteractor)
 
+	// post reply 相關建立
+	replyRepository := models.NewMongoPostReplyRepository(db.Collection("post_reply"))
+	replyInteractor := models.NewPostReplyInteractor(replyRepository)
+	PostReplyController = controllers.NewPostReplyController(replyInteractor)
+
 	server = gin.Default()
 }
 
@@ -91,6 +97,8 @@ func main() {
 			{
 				user.GET("/me", UserController.GetMe)
 			}
+
+			// 文章相關路由
 			post := router.Group("post")
 			{
 				post.GET("/", PostController.List)
@@ -98,6 +106,14 @@ func main() {
 				post.POST("/", PostController.Store)
 				post.PUT("/:id", PostController.Update)
 				post.DELETE("/:id", PostController.Delete)
+
+				reply := post.Group("reply")
+				{
+					reply.GET("/:id", PostReplyController.List)
+					reply.POST("/", PostReplyController.Store)
+					reply.PUT("/:id", PostReplyController.Update)
+					reply.DELETE("/:id", PostReplyController.Delete)
+				}
 			}
 
 		}
