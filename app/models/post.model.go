@@ -10,11 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Post Entities
 type Post struct {
-	Title     string    `json:"title" bson:"title" binding:"required"`
-	Content   string    `json:"content" bson:"content" binding:"required"`
-	CreatedAt time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty" bson:"updated_at"`
+	Id        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Title     string             `json:"title" bson:"title" binding:"required"`
+	Content   string             `json:"content" bson:"content" binding:"required"`
+	CreatedAt time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt time.Time          `json:"updated_at,omitempty" bson:"updated_at"`
 }
 
 type PostRepository interface {
@@ -26,7 +28,7 @@ type PostRepository interface {
 }
 
 type PostInteractor struct {
-	postRepository PostRepository
+	repository PostRepository
 }
 
 func NewPostInteractor(pr PostRepository) *PostInteractor {
@@ -34,23 +36,21 @@ func NewPostInteractor(pr PostRepository) *PostInteractor {
 }
 
 func (pi *PostInteractor) CreatePost(data *Post) error {
-	err := pi.postRepository.Create(data)
-	if err != nil {
+	if err := pi.repository.Create(data); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (pi *PostInteractor) UpdatePost(data *Post, id string) error {
-	err := pi.postRepository.UpdateById(data, id)
-	if err != nil {
+	if err := pi.repository.UpdateById(data, id); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (pi *PostInteractor) GetAllPost() ([]*Post, error) {
-	data, err := pi.postRepository.FindAll()
+	data, err := pi.repository.FindAll()
 	if err != nil {
 		return []*Post{}, err
 	}
@@ -58,7 +58,7 @@ func (pi *PostInteractor) GetAllPost() ([]*Post, error) {
 }
 
 func (pi *PostInteractor) GetPostById(id string) (*Post, error) {
-	data, err := pi.postRepository.FindById(id)
+	data, err := pi.repository.FindById(id)
 	if err != nil {
 		return &Post{}, err
 	}
@@ -66,7 +66,7 @@ func (pi *PostInteractor) GetPostById(id string) (*Post, error) {
 }
 
 func (pi *PostInteractor) DeletePostById(id string) error {
-	if err := pi.postRepository.DeleteById(id); err != nil {
+	if err := pi.repository.DeleteById(id); err != nil {
 		return err
 	}
 	return nil
