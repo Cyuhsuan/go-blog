@@ -12,28 +12,27 @@ import (
 )
 
 type Post struct {
-	Title     string
-	Content   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Title     string    `bson:"title"`
+	Content   string    `bson:"content"`
+	CreatedAt time.Time `bson:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at"`
 }
 
 type PostModel struct {
 	collection *mongo.Collection
-	ctx        context.Context
 }
 
-func NewPostModel(collection *mongo.Collection, ctx context.Context) *PostModel {
-	return &PostModel{collection, ctx}
+func NewPostModel(collection *mongo.Collection) *PostModel {
+	return &PostModel{collection}
 }
 
-func (m *PostModel) FindAll() ([]Post, error) {
-	cursor, err := m.collection.Find(m.ctx, bson.D{})
+func (m *PostModel) FindAll(ctx context.Context) ([]Post, error) {
+	cursor, err := m.collection.Find(ctx, bson.D{})
 	if err != nil {
 		return []Post{}, errors.New("query error")
 	}
 	var results []Post
-	for cursor.Next(m.ctx) {
+	for cursor.Next(ctx) {
 		var elem Post
 		err := cursor.Decode(&elem)
 		if err != nil {
@@ -45,13 +44,13 @@ func (m *PostModel) FindAll() ([]Post, error) {
 	}
 	return results, nil
 }
-func (m *PostModel) FindById(id string) (Post, error) {
+func (m *PostModel) FindById(ctx context.Context, id string) (Post, error) {
 	oid, _ := primitive.ObjectIDFromHex(id)
 
 	var post Post
 
 	query := bson.M{"_id": oid}
-	err := m.collection.FindOne(m.ctx, query).Decode(&post)
+	err := m.collection.FindOne(ctx, query).Decode(&post)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -62,8 +61,8 @@ func (m *PostModel) FindById(id string) (Post, error) {
 
 	return post, nil
 }
-func (m *PostModel) Create(data validation.PostCreateForm) error {
-	_, err := m.collection.InsertOne(m.ctx, data)
+func (m *PostModel) Create(ctx context.Context, data validation.PostCreateForm) error {
+	_, err := m.collection.InsertOne(ctx, data)
 
 	if err != nil {
 		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
@@ -73,7 +72,7 @@ func (m *PostModel) Create(data validation.PostCreateForm) error {
 	}
 	return nil
 }
-func (m *PostModel) UpdateById(data validation.PostCreateForm, id string) error {
+func (m *PostModel) UpdateById(ctx context.Context, data validation.PostCreateForm, id string) error {
 	oid, _ := primitive.ObjectIDFromHex(id)
 	filter := bson.D{{"_id", oid}}
 	var updateFields bson.D
@@ -81,16 +80,16 @@ func (m *PostModel) UpdateById(data validation.PostCreateForm, id string) error 
 	bson.Unmarshal(conv, &updateFields)
 	update := bson.D{{"$set", updateFields}}
 
-	_, err := m.collection.UpdateOne(m.ctx, filter, update)
+	_, err := m.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (m *PostModel) DeleteById(id string) error {
+func (m *PostModel) DeleteById(ctx context.Context, id string) error {
 	oid, _ := primitive.ObjectIDFromHex(id)
 
-	_, err := m.collection.DeleteOne(m.ctx, bson.D{{"_id", oid}})
+	_, err := m.collection.DeleteOne(ctx, bson.D{{"_id", oid}})
 	if err != nil {
 		return err
 	}

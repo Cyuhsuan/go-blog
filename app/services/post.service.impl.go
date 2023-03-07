@@ -12,19 +12,21 @@ type PostServiceImpl struct {
 	model *models.PostModel
 }
 
-func NewPostService(ctx context.Context, collection *mongo.Collection) PostService {
-	return &PostServiceImpl{models.NewPostModel(collection, ctx)}
+var ctx context.Context
+
+func NewPostService(collection *mongo.Collection) PostService {
+	return &PostServiceImpl{models.NewPostModel(collection)}
 }
 
 func (ps *PostServiceImpl) Index() ([]models.Post, error) {
-	results, err := ps.model.FindAll()
+	results, err := ps.model.FindAll(ctx)
 	if err != nil {
 		return []models.Post{}, err
 	}
 	return results, nil
 }
 func (ps *PostServiceImpl) Show(id string) (models.Post, error) {
-	result, err := ps.model.FindById(id)
+	result, err := ps.model.FindById(ctx, id)
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -32,21 +34,21 @@ func (ps *PostServiceImpl) Show(id string) (models.Post, error) {
 }
 
 func (ps *PostServiceImpl) Store(data validation.PostCreateForm) error {
-	err := ps.model.Create(data)
+	err := ps.model.Create(ctx, data)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 func (ps *PostServiceImpl) Update(data validation.PostCreateForm, id string) error {
-	err := ps.model.UpdateById(data, id)
+	err := ps.model.UpdateById(ctx, data, id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 func (ps *PostServiceImpl) Delete(id string) error {
-	err := ps.model.DeleteById(id)
+	err := ps.model.DeleteById(ctx, id)
 	if err != nil {
 		return err
 	}

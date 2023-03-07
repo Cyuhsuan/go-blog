@@ -55,7 +55,7 @@ func init() {
 	// 建立 service controller
 	userService = services.NewUserService(db, ctx)
 	authService = services.NewAuthService(db, ctx)
-	postService = services.NewPostService(ctx, db.Collection("post"))
+	postService = services.NewPostService(db.Collection("post"))
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
 	PostController = controllers.NewPostController(postService)
