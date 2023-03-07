@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -27,8 +26,6 @@ type LoginForm struct {
 func (form *RegitsterForm) Validation(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&form)
 	if err != nil {
-		fmt.Println("err", err)
-
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-blog/app/controllers"
 	"go-blog/app/middleware"
+	"go-blog/app/models"
 	"go-blog/app/services"
 	"go-blog/config"
 	"log"
@@ -23,7 +24,6 @@ var (
 
 	userService    services.UserService
 	authService    services.AuthService
-	postService    services.PostService
 	UserController controllers.UserController
 	AuthController controllers.AuthController
 	PostController controllers.PostController
@@ -55,10 +55,13 @@ func init() {
 	// 建立 service controller
 	userService = services.NewUserService(db, ctx)
 	authService = services.NewAuthService(db, ctx)
-	postService = services.NewPostService(db.Collection("post"))
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
-	PostController = controllers.NewPostController(postService)
+
+	// post 相關建立
+	postRepository := models.NewMongoPostRepository(db.Collection("post"))
+	postInteractor := models.NewPostInteractor(postRepository)
+	PostController = controllers.NewPostController(postInteractor)
 
 	server = gin.Default()
 }

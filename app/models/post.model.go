@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"go-blog/app/validation"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,31 +11,88 @@ import (
 )
 
 type Post struct {
-	Title     string    `bson:"title"`
-	Content   string    `bson:"content"`
-	CreatedAt time.Time `bson:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at"`
+	Title     string    `json:"title" bson:"title" binding:"required"`
+	Content   string    `json:"content" bson:"content" binding:"required"`
+	CreatedAt time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" bson:"updated_at"`
 }
 
-type PostModel struct {
+type PostRepository interface {
+	FindAll() ([]*Post, error)
+	FindById(id string) (*Post, error)
+	Create(data *Post) error
+	UpdateById(data *Post, id string) error
+	DeleteById(id string) error
+}
+
+type PostInteractor struct {
+	postRepository PostRepository
+}
+
+func NewPostInteractor(pr PostRepository) *PostInteractor {
+	return &PostInteractor{pr}
+}
+
+func (pi *PostInteractor) CreatePost(data *Post) error {
+	err := pi.postRepository.Create(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pi *PostInteractor) UpdatePost(data *Post, id string) error {
+	err := pi.postRepository.UpdateById(data, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pi *PostInteractor) GetAllPost() ([]*Post, error) {
+	data, err := pi.postRepository.FindAll()
+	if err != nil {
+		return []*Post{}, err
+	}
+	return data, nil
+}
+
+func (pi *PostInteractor) GetPostById(id string) (*Post, error) {
+	data, err := pi.postRepository.FindById(id)
+	if err != nil {
+		return &Post{}, err
+	}
+	return data, nil
+}
+
+func (pi *PostInteractor) DeletePostById(id string) error {
+	if err := pi.postRepository.DeleteById(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// mongodb的post model
+type MongodbPostModel struct {
 	collection *mongo.Collection
 }
 
-func NewPostModel(collection *mongo.Collection) *PostModel {
-	return &PostModel{collection}
+func NewMongoPostRepository(collection *mongo.Collection) PostRepository {
+	return &MongodbPostModel{collection}
 }
 
-func (m *PostModel) FindAll(ctx context.Context) ([]Post, error) {
-	cursor, err := m.collection.Find(ctx, bson.D{})
+func (pm *MongodbPostModel) FindAll() ([]*Post, error) {
+	ctx := context.TODO()
+	cursor, err := pm.collection.Find(ctx, bson.D{})
 	if err != nil {
-		return []Post{}, errors.New("query error")
+		return []*Post{}, errors.New("query error")
 	}
-	var results []Post
+	var results []*Post
 	for cursor.Next(ctx) {
-		var elem Post
+		var elem *Post
 		err := cursor.Decode(&elem)
 		if err != nil {
-			return []Post{}, errors.New("query data error")
+			return []*Post{}, errors.New("query data error")
 		}
 
 		results = append(results, elem)
@@ -44,52 +100,45 @@ func (m *PostModel) FindAll(ctx context.Context) ([]Post, error) {
 	}
 	return results, nil
 }
-func (m *PostModel) FindById(ctx context.Context, id string) (Post, error) {
+func (pm *MongodbPostModel) FindById(id string) (*Post, error) {
+	ctx := context.TODO()
 	oid, _ := primitive.ObjectIDFromHex(id)
 
-	var post Post
-
-	query := bson.M{"_id": oid}
-	err := m.collection.FindOne(ctx, query).Decode(&post)
-
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return Post{}, err
-		}
-		return Post{}, err
+	var post *Post
+	if err := pm.collection.FindOne(ctx, bson.M{"_id": oid}).Decode(&post); err != nil {
+		return &Post{}, err
 	}
 
 	return post, nil
 }
-func (m *PostModel) Create(ctx context.Context, data validation.PostCreateForm) error {
-	_, err := m.collection.InsertOne(ctx, data)
-
-	if err != nil {
-		if er, ok := err.(mongo.WriteException); ok && er.WriteErrors[0].Code == 11000 {
-			return errors.New("user with that email already exist")
-		}
+func (pm *MongodbPostModel) Create(data *Post) error {
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = time.Now()
+	ctx := context.TODO()
+	if _, err := pm.collection.InsertOne(ctx, data); err != nil {
 		return err
 	}
 	return nil
 }
-func (m *PostModel) UpdateById(ctx context.Context, data validation.PostCreateForm, id string) error {
+func (pm *MongodbPostModel) UpdateById(data *Post, id string) error {
+	ctx := context.TODO()
 	oid, _ := primitive.ObjectIDFromHex(id)
 	filter := bson.D{{"_id", oid}}
 	var updateFields bson.D
+	data.UpdatedAt = time.Now()
 	conv, _ := bson.Marshal(data)
 	bson.Unmarshal(conv, &updateFields)
 	update := bson.D{{"$set", updateFields}}
-
-	_, err := m.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
+	if _, err := pm.collection.UpdateOne(ctx, filter, update); err != nil {
 		return err
 	}
 	return nil
 }
-func (m *PostModel) DeleteById(ctx context.Context, id string) error {
+func (pm *MongodbPostModel) DeleteById(id string) error {
+	ctx := context.TODO()
 	oid, _ := primitive.ObjectIDFromHex(id)
 
-	_, err := m.collection.DeleteOne(ctx, bson.D{{"_id", oid}})
+	_, err := pm.collection.DeleteOne(ctx, bson.D{{"_id", oid}})
 	if err != nil {
 		return err
 	}
