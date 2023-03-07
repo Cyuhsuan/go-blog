@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"go-blog/app/controllers"
+	"go-blog/app/database"
 	"go-blog/app/middleware"
 	"go-blog/app/models"
 	"go-blog/app/services"
@@ -11,16 +11,12 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var (
 	server *gin.Engine
 	ctx    context.Context
-	dbConn *mongo.Client
-	db     *mongo.Database
+	mongo  database.MongoDB
 
 	userService         services.UserService
 	authService         services.AuthService
@@ -31,41 +27,20 @@ var (
 )
 
 func init() {
-	config, err := config.LoadConfig(".")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-	}
-	ctx = context.TODO()
-
-	// Connect to MongoDB
-	dbConfig := options.Client().ApplyURI(config.DBUri)
-	dbConn, err := mongo.Connect(ctx, dbConfig)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if err := dbConn.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
-	}
-
-	fmt.Println("MongoDB successfully connected...")
-
-	// db
-	db := dbConn.Database("go-blog")
+	mongo.Conn(ctx)
 	// 建立 service controller
-	userService = services.NewUserService(db, ctx)
-	authService = services.NewAuthService(db, ctx)
+	userService = services.NewUserService(mongo.DataBase, ctx)
+	authService = services.NewAuthService(mongo.DataBase, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
 	UserController = controllers.NewUserController(userService)
 
 	// post 相關建立
-	postRepository := models.NewMongoPostRepository(db.Collection("post"))
+	postRepository := models.NewMongoPostRepository(mongo.DataBase.Collection("post"))
 	postInteractor := models.NewPostInteractor(postRepository)
 	PostController = controllers.NewPostController(postInteractor)
 
 	// post reply 相關建立
-	replyRepository := models.NewMongoPostReplyRepository(db.Collection("post_reply"))
+	replyRepository := models.NewMongoPostReplyRepository(mongo.DataBase.Collection("post_reply"))
 	replyInteractor := models.NewPostReplyInteractor(replyRepository)
 	PostReplyController = controllers.NewPostReplyController(replyInteractor)
 
@@ -79,7 +54,7 @@ func main() {
 		log.Fatal("Could not load config", err)
 	}
 
-	defer dbConn.Disconnect(ctx)
+	defer mongo.DisConn(ctx)
 
 	router := server.Group("/api")
 	{
